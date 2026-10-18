@@ -3,6 +3,7 @@ import type { Matrix3 as CoreMatrix3, StitchingSetup } from '@gyroview/core';
 import { BentJoinRenderer } from '../bentJoin/BentJoinRenderer';
 import { applyLensPose } from '../rendererUniforms';
 import type { ThreeFrameRendererOptions } from '../ThreeFrameRenderer';
+import type { RenderCanvas } from '../webglRenderer';
 
 /**
  * The renderer `pnpm measure` draws with: the bent join's renderer (ADR 0048), with the
@@ -10,7 +11,7 @@ import type { ThreeFrameRendererOptions } from '../ThreeFrameRenderer';
  */
 export class LabRenderer extends BentJoinRenderer {
   public static override create(
-    canvas: HTMLCanvasElement,
+    canvas: RenderCanvas,
     setup: StitchingSetup,
     options: ThreeFrameRendererOptions = {},
   ): LabRenderer {

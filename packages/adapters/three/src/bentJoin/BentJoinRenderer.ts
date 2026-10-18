@@ -5,6 +5,7 @@ import { applySeamAlignment, createSeamJoinUniforms, type SeamJoinUniforms } fro
 import { SeamMismatchPass } from './seamMismatch/SeamMismatchPass';
 import { openRendererParts, type RendererParts } from '../rendererParts';
 import { ThreeFrameRenderer, type ThreeFrameRendererOptions } from '../ThreeFrameRenderer';
+import type { RenderCanvas } from '../webglRenderer';
 
 /**
  * The player's renderer with the bent seam join (ADR 0026, ADR 0048): each lens read across the
@@ -16,14 +17,14 @@ import { ThreeFrameRenderer, type ThreeFrameRendererOptions } from '../ThreeFram
 export class BentJoinRenderer extends ThreeFrameRenderer {
   protected constructor(
     parts: RendererParts,
-    canvas: HTMLCanvasElement,
+    canvas: RenderCanvas,
     private readonly join: SeamJoinUniforms,
   ) {
     super(parts, canvas);
   }
 
   public static override create(
-    canvas: HTMLCanvasElement,
+    canvas: RenderCanvas,
     setup: StitchingSetup,
     options: ThreeFrameRendererOptions = {},
   ): BentJoinRenderer {
@@ -36,7 +37,7 @@ export class BentJoinRenderer extends ThreeFrameRenderer {
    * for this class's `create` and a subclass's.
    */
   protected static open(
-    canvas: HTMLCanvasElement,
+    canvas: RenderCanvas,
     setup: StitchingSetup,
     options: ThreeFrameRendererOptions,
   ): { readonly parts: RendererParts; readonly join: SeamJoinUniforms } {

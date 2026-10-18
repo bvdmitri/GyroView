@@ -1,4 +1,9 @@
-import { seconds, type PictureQuality, type StabilizationMode } from '@gyroview/core';
+import {
+  seconds,
+  type PictureQuality,
+  type SeamJoin,
+  type StabilizationMode,
+} from '@gyroview/core';
 
 import { browserPorts, type BrowserPortsOptions } from './composition/browserPorts';
 import { openRecording } from './composition/openRecording';
@@ -28,6 +33,13 @@ export interface RenditionOptions extends Pick<BrowserPortsOptions, 'http'> {
   readonly stabilization?: StabilizationMode;
   readonly gainMatching?: boolean;
   readonly quality?: PictureQuality;
+  /**
+   * How the lenses are joined at the seam: `fixed`, as the player draws it, by default; or
+   * `bent`, each frame's lenses read across the seam by the disparity measured on it, so that a
+   * near object crossing the seam is drawn single (ADR 0048). A bent frame takes tens of
+   * milliseconds more to render.
+   */
+  readonly seamJoin?: SeamJoin;
   /**
    * Where the picture is drawn; an `OffscreenCanvas` of the rendition's own if none.
    */
@@ -97,7 +109,7 @@ export async function openRendition(
 }
 
 function requestOf(options: RenditionOptions): Parameters<typeof renditionOf>[1] {
-  const { width, from, to, stabilization, gainMatching, quality } = options;
+  const { width, from, to, stabilization, gainMatching, quality, seamJoin } = options;
   return {
     width,
     ...(from !== undefined && { from: seconds(from) }),
@@ -105,6 +117,7 @@ function requestOf(options: RenditionOptions): Parameters<typeof renditionOf>[1]
     ...(stabilization && { stabilization }),
     ...(gainMatching !== undefined && { gainMatching }),
     ...(quality && { quality }),
+    ...(seamJoin && { seamJoin }),
   };
 }
 

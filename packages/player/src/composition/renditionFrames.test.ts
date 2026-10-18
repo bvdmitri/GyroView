@@ -153,6 +153,28 @@ describe('renditionOf', () => {
     expect(new Set(middle).size).toBeGreaterThan(16);
   });
 
+  it('renders every frame once and in order through the bent seam join, the same pixels every time', async () => {
+    const { recording } = await openSynthetic();
+    const bent = await framesOf(recording, { width: WIDTH, seamJoin: 'bent' });
+    expect(bent.map((frame) => frame.timestamp)).toEqual(
+      Array.from({ length: FRAME_COUNT }, (_unused, index) => index * FRAME_MICROSECONDS),
+    );
+    const renders: Uint8ClampedArray[][] = [];
+    for (let run = 0; run < 2; run += 1) {
+      const rendition = renditionOf(
+        { opened: recording, decoderPort: browserPorts().decoderPort },
+        { width: WIDTH, seamJoin: 'bent' },
+      );
+      const pictures: Uint8ClampedArray[] = [];
+      for await (const frame of rendition.frames()) {
+        pictures.push(pixelsOf(frame));
+        frame.close();
+      }
+      renders.push(pictures);
+    }
+    expect(renders[1]).toEqual(renders[0]);
+  });
+
   it('renders only the frames of the span asked for, timed from its start', async () => {
     const { recording } = await openSynthetic();
     const frames = await framesOf(recording, { width: WIDTH, from: seconds(1.05), to: seconds(2) });

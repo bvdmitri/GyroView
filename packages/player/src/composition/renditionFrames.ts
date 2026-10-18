@@ -1,4 +1,4 @@
-import { ThreeFrameRenderer, type RenderCanvas } from '@gyroview/adapter-three';
+import { BentJoinRenderer, ThreeFrameRenderer, type RenderCanvas } from '@gyroview/adapter-three';
 import {
   DecodePipeline,
   DEFAULT_PICTURE_QUALITY,
@@ -11,11 +11,13 @@ import {
   referenceLensOf,
   RenditionSpan,
   renditionSizeOf,
+  SeamBending,
   seconds,
   stabilizerFor,
   UPRIGHT_MOUNTING,
   type FramePair,
   type PictureQuality,
+  type SeamJoin,
   type SpanRequest,
   type StabilizationMode,
   type VideoDecoderPort,
@@ -39,6 +41,11 @@ export interface RenditionRequest extends SpanRequest {
   readonly stabilization?: StabilizationMode;
   readonly gainMatching?: boolean;
   readonly quality?: PictureQuality;
+  /**
+   * How the lenses are joined at the seam: `fixed` as the player draws it, by default, or `bent`
+   * by the disparity measured on every frame (ADR 0048).
+   */
+  readonly seamJoin?: SeamJoin;
 }
 
 export interface RenditionParts {
@@ -92,6 +99,7 @@ class RenditionRun implements Rendition {
   private readonly canvas: RenderCanvas;
   private readonly renderer: ThreeFrameRenderer;
   private readonly gainMatching: GainMatchingFrameSink<VideoFrame>;
+  private readonly bending: SeamBending | undefined;
   private readonly queue: FramePairQueue<VideoFrame>;
   private readonly pipeline: DecodePipeline<VideoFrame>;
   private wake = new Deferred<void>();
@@ -107,8 +115,13 @@ class RenditionRun implements Rendition {
     this.span = shape.span;
     this.size = shape.size;
     this.canvas = parts.canvas ?? new OffscreenCanvas(this.size.width, this.size.height);
-    this.renderer = this.equirectangularRenderer(request.quality ?? DEFAULT_PICTURE_QUALITY);
+    const renderer = this.equirectangularRenderer(request);
+    this.renderer = renderer;
     this.gainMatching = this.sinksOver(request);
+    this.bending =
+      renderer instanceof BentJoinRenderer
+        ? new SeamBending({ renderer, referenceLens: this.referenceLens() })
+        : undefined;
     this.queue = new FramePairQueue(PAIR_QUEUE_CAPACITY, () => {
       this.wake.resolve();
     });
@@ -142,18 +155,37 @@ class RenditionRun implements Rendition {
     this.pipeline.abort();
     this.queue.close();
     this.gainMatching.dispose();
+    this.bending?.dispose();
     this.renderer.dispose();
     this.wake.resolve();
   }
 
-  private equirectangularRenderer(quality: PictureQuality): ThreeFrameRenderer {
+  /**
+   * The bent join's renderer for a bent rendition, the player's otherwise.
+   */
+  private equirectangularRenderer(request: RenditionRequest): ThreeFrameRenderer {
     this.canvas.width = this.size.width;
     this.canvas.height = this.size.height;
-    const renderer = ThreeFrameRenderer.create(this.canvas, stitchingSetupOf(this.parts.opened));
+    const setup = stitchingSetupOf(this.parts.opened);
+    const renderer =
+      request.seamJoin === 'bent'
+        ? BentJoinRenderer.create(this.canvas, setup)
+        : ThreeFrameRenderer.create(this.canvas, setup);
     renderer.resize(this.size);
     renderer.setViewMode('equirectangular');
-    renderer.setQuality(quality);
+    renderer.setQuality(request.quality ?? DEFAULT_PICTURE_QUALITY);
     return renderer;
+  }
+
+  /**
+   * The lens the viewer starts facing, whose exposure the others are matched to.
+   */
+  private referenceLens(): number {
+    const { opened } = this.parts;
+    return referenceLensOf(
+      stitchingSetupOf(opened).lenses,
+      opened.motion?.mounting ?? UPRIGHT_MOUNTING,
+    );
   }
 
   /**
@@ -164,23 +196,20 @@ class RenditionRun implements Rendition {
     const { opened } = this.parts;
     const { sink, stabilizing } = sinkOver(this.renderer, opened);
     stabilizing?.setStabilizer(stabilizerFor(request.stabilization ?? DEFAULT_STABILIZATION_MODE));
-    const mounting = opened.motion?.mounting ?? UPRIGHT_MOUNTING;
-    const lenses = stitchingSetupOf(opened).lenses;
-    const matching = new GainMatchingFrameSink(
-      sink,
-      this.renderer,
-      referenceLensOf(lenses, mounting),
-    );
+    const matching = new GainMatchingFrameSink(sink, this.renderer, this.referenceLens());
     if (request.gainMatching ?? true) matching.enable();
     return matching;
   }
 
   /**
-   * Draws the pair and takes the picture, then waits for the gains measured on it, so they show
-   * from the next frame on whatever the GPU's pace.
+   * Draws the pair, bent by its own disparity in a bent rendition, and takes the picture, then
+   * waits for the gains measured on it, so they show from the next frame on whatever the GPU's
+   * pace.
    */
   private async render(pair: FramePair<VideoFrame>): Promise<VideoFrame> {
     this.gainMatching.present({ pair, mediaTime: pair.timestamp });
+    // The join is redrawn bent by the disparity measured on the pair just drawn.
+    await this.bending?.bendAt(pair.timestamp);
     const picture = new VideoFrame(this.canvas, {
       timestamp: this.span.timestampOf(pair.timestamp),
       ...durationOf(pair),
