@@ -1,8 +1,9 @@
 # Publishes this fork's build of the package as @bvdmitri/gyroview, for Cutaway
 # to depend on until upstream releases the rendition API and the app-trim fix.
 # Runs on a `cutaway-v<version>` tag of the `cutaway` branch; the tag must match
-# apps/library/package.json. Needs the NPM_TOKEN secret (a granular token with
-# "Read and write (publish and stage)" on the @bvdmitri scope).
+# apps/library/package.json. Publishes through npm trusted publishing (OIDC),
+# no token: the package's settings on npmjs.com trust this repository and this
+# workflow file.
 name: Publish the Cutaway build
 
 on:
@@ -11,6 +12,8 @@ on:
 
 permissions:
   contents: read
+  # Trusted publishing: npm exchanges the workflow's OIDC token for a publish.
+  id-token: write
 
 jobs:
   publish:
@@ -27,6 +30,8 @@ jobs:
           version="$(node -p "require('./apps/library/package.json').version")"
           test "${GITHUB_REF_NAME}" = "cutaway-v${version}" || {
             echo "tag ${GITHUB_REF_NAME} does not match version ${version}"; exit 1; }
+      # Trusted publishing needs npm 11.5.1 or later.
+      - run: npm install --global npm@11.6.2
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @bubo-squared/gyroview build
       - name: Publish as @bvdmitri/gyroview
@@ -37,5 +42,3 @@ jobs:
             homepage=https://github.com/bvdmitri/GyroView/tree/cutaway#readme \
             bugs=https://github.com/bvdmitri/GyroView/issues
           npm publish --access public --tag cutaway
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
