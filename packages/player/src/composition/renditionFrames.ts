@@ -12,7 +12,6 @@ import {
   RenditionSpan,
   renditionSizeOf,
   seconds,
-  stabilizerFor,
   UPRIGHT_MOUNTING,
   type FramePair,
   type PictureQuality,
@@ -163,7 +162,7 @@ class RenditionRun implements Rendition {
   private sinksOver(request: RenditionRequest): GainMatchingFrameSink<VideoFrame> {
     const { opened } = this.parts;
     const { sink, stabilizing } = sinkOver(this.renderer, opened);
-    stabilizing?.setStabilizer(stabilizerFor(request.stabilization ?? DEFAULT_STABILIZATION_MODE));
+    stabilizing?.setStabilizationMode(request.stabilization ?? DEFAULT_STABILIZATION_MODE);
     const mounting = opened.motion?.mounting ?? UPRIGHT_MOUNTING;
     const lenses = stitchingSetupOf(opened).lenses;
     const matching = new GainMatchingFrameSink(
