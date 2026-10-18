@@ -5,6 +5,17 @@ the API.
 
 ## Unreleased
 
+Added (ADR 0045, a recording is rendered frame by frame at the pace its consumer takes the frames):
+
+- `openRendition(source, { width, from, to, stabilization, gainMatching, quality, canvas, signal })`
+  renders a recording frame by frame for an encoder: `rendition.frames()` yields every frame of
+  the span once, in order, as an equirectangular `VideoFrame` `width` pixels across and half as
+  many down, timed in microseconds from `from`, whenever the page asks for the next; nothing is
+  dropped for a slow encoder. It draws on an `OffscreenCanvas` of its own, so it runs in a
+  dedicated worker too. The settings are the player's defaults unless given. A width that is not
+  a multiple of four, or a span that holds no frame, is refused with `invalid-argument`. Its types,
+  `Rendition` and `RenditionOptions`, are exported.
+
 Fixed:
 
 - A clip trimmed in the Insta360 app is stabilized with the gyro of its own frames. The app keeps
