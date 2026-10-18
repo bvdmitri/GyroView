@@ -1,4 +1,4 @@
-import type { SeamMeter, Vector3 } from '@gyroview/core';
+import { SEAM_COLOUR_DIRECTIONS, type SeamMeter, type SeamReading } from '@gyroview/core';
 import {
   Camera,
   Mesh,
@@ -9,7 +9,7 @@ import {
   type WebGLRenderer,
 } from 'three';
 
-import { rowMeansOf } from './rowMeans';
+import { seamReadingOf } from './rowMeans';
 import { compileAndProve } from '../compileAndProve';
 import { createFullscreenTriangle, createPassMaterial, programOf } from '../fullscreenPass';
 import { RGBA_CHANNELS } from './rowMeans';
@@ -18,10 +18,10 @@ import { MAX_LENSES, type RendererUniforms } from '../rendererUniforms';
 import { SEAM_ANALYSIS } from '../shaderPrograms';
 
 /**
- * Samples taken around the seam ring per lens: enough to average out content, few enough that
- * the read-back is negligible.
+ * Samples taken around the seam ring per lens, one per direction the seam's colour field holds:
+ * enough to average out content, few enough that the read-back is negligible.
  */
-const SEAM_SAMPLES = 64;
+const SEAM_SAMPLES = SEAM_COLOUR_DIRECTIONS;
 
 /**
  * SeamMeter over the GPU: renders what each lens sees along the seam ring into one row of a tiny
@@ -64,10 +64,10 @@ export class SeamMeterPass implements SeamMeter {
   }
 
   /**
-   * Mean colour (0..1) each lens shows along the seam where they can be compared, or undefined
-   * when they cannot be anywhere.
+   * Mean colour (0..1) each lens shows along the seam where they can be compared, and each
+   * direction's, or undefined when they cannot be compared anywhere.
    */
-  public async measure(): Promise<readonly Vector3[] | undefined> {
+  public async measure(): Promise<SeamReading | undefined> {
     try {
       await this.readSeam();
     } catch (error) {
@@ -77,7 +77,7 @@ export class SeamMeterPass implements SeamMeter {
       if (this.isDisposed || this.renderer.getContext().isContextLost()) return undefined;
       throw error;
     }
-    return this.isDisposed ? undefined : rowMeansOf(this.pixels, SEAM_SAMPLES, this.lensCount);
+    return this.isDisposed ? undefined : seamReadingOf(this.pixels, SEAM_SAMPLES, this.lensCount);
   }
 
   public dispose(): void {

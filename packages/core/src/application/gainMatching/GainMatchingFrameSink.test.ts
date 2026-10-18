@@ -1,15 +1,18 @@
 import { describe, expect, it } from 'vitest';
 
 import { GainMatchingFrameSink } from './GainMatchingFrameSink';
-import type { SeamMeter } from '../../ports/SeamMeter';
+import type { SeamMeter, SeamReading } from '../../ports/SeamMeter';
 import type { Vector3 } from '../../shared/math/Vector3';
 import { seconds } from '../../shared/units/time';
 import { FakeFrameSink } from '../../testing/FakeFrameSink';
 
-const BRIGHT_AND_DARK: readonly Vector3[] = [
-  [0.8, 0.8, 0.8],
-  [0.4, 0.4, 0.4],
-];
+const BRIGHT_AND_DARK: SeamReading = {
+  means: [
+    [0.8, 0.8, 0.8],
+    [0.4, 0.4, 0.4],
+  ],
+  around: [],
+};
 
 /**
  * A renderer whose seam always reads bright on lens 0 and dark on lens 1.
@@ -18,12 +21,13 @@ class FakeRenderer {
   public readonly lensCount = 2;
   public readonly meters: { isDisposed: boolean }[] = [];
   public readonly applied: (readonly Vector3[])[] = [];
+  public readonly seamColours: (readonly Vector3[] | undefined)[] = [];
 
   public createSeamMeter(): SeamMeter {
     const meter = { isDisposed: false };
     this.meters.push(meter);
     return {
-      measure: (): Promise<readonly Vector3[]> => Promise.resolve(BRIGHT_AND_DARK),
+      measure: (): Promise<SeamReading> => Promise.resolve(BRIGHT_AND_DARK),
       dispose: (): void => {
         meter.isDisposed = true;
       },
@@ -32,6 +36,10 @@ class FakeRenderer {
 
   public setLensGains(gains: readonly Vector3[]): void {
     this.applied.push(gains);
+  }
+
+  public setSeamColours(field: readonly Vector3[] | undefined): void {
+    this.seamColours.push(field);
   }
 }
 
@@ -106,5 +114,7 @@ describe('GainMatchingFrameSink', () => {
       [1, 1, 1],
       [1, 1, 1],
     ]);
+    expect(renderer.seamColours.at(-1)).toBeUndefined();
+    expect(renderer.seamColours.length).toBeGreaterThan(1);
   });
 });

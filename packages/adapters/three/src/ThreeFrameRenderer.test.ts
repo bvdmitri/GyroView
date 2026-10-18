@@ -8,6 +8,8 @@ import {
   MAX_MAGNIFICATION,
   quaternionFromAxisAngle,
   radians,
+  SEAM_COLOUR_DIRECTIONS,
+  seamColourFieldOf,
   seconds,
   stabilizerFor,
   transformVector,
@@ -213,6 +215,14 @@ function afterNextTask(): Promise<void> {
   return new Promise((resolve) => {
     setTimeout(resolve, 0);
   });
+}
+
+/**
+ * The body direction this many degrees from lens 0's axis, towards the body's x.
+ */
+function fromLensZeroAxis(degreesFromAxis: number): Vector3 {
+  const angle = (degreesFromAxis * Math.PI) / 180;
+  return [Math.sin(angle), 0, Math.cos(angle)];
 }
 
 function pixelTowards(renderer: ThreeFrameRenderer, direction: Vector3, size = SIZE): Rgb {
@@ -574,6 +584,52 @@ describe('ThreeFrameRenderer', () => {
     present(matching, [halvesFrame('rgb(200, 200, 200)', 'rgb(100, 100, 100)')]);
     await matching.matchNow();
     expect(pixelTowards(renderer, [0, 0, -1]).g).toBeGreaterThan(190);
+  });
+
+  it("draws each lens towards the halfway colour at the seam by the seam's colour field, and leaves the view's centre", async () => {
+    // Lens 1 shows the same scene darker in red and brighter in blue.
+    const frames = [solidFrame('rgb(150, 120, 90)'), solidFrame('rgb(100, 120, 135)')];
+    const plain = open();
+    plain.setViewMode('equirectangular');
+    present(plain, frames);
+    const matched = open();
+    matched.setViewMode('equirectangular');
+    present(matched, frames);
+    // The field as gain matching takes it: from the seam meter, the lenses at unit gain.
+    const meter = matched.createSeamMeter();
+    const reading = await meter.measure();
+    meter.dispose();
+    matched.setSeamColours(
+      seamColourFieldOf(reading?.around ?? [], [
+        [1, 1, 1],
+        [1, 1, 1],
+      ]),
+    );
+    present(matched, frames);
+    // Just inside each side of the feather band about lens 0's axis.
+    const stepOf = (renderer: ThreeFrameRenderer): number => {
+      const zero = pixelTowards(renderer, fromLensZeroAxis(86));
+      const one = pixelTowards(renderer, fromLensZeroAxis(94));
+      return Math.abs(zero.r - one.r) + Math.abs(zero.b - one.b);
+    };
+    expect(stepOf(plain)).toBeGreaterThan(40);
+    expect(stepOf(matched)).toBeLessThan(8);
+    expect(pixelTowards(matched, [0, 0, 1])).toEqual(pixelTowards(plain, [0, 0, 1]));
+  });
+
+  it('draws the lenses as the gains leave them once the seam colour field is taken away', () => {
+    const frames = [solidFrame('rgb(150, 120, 90)'), solidFrame('rgb(100, 120, 135)')];
+    const plain = open();
+    plain.setViewMode('equirectangular');
+    present(plain, frames);
+    const cleared = open();
+    cleared.setViewMode('equirectangular');
+    cleared.setSeamColours(
+      Array.from({ length: SEAM_COLOUR_DIRECTIONS }, () => [2, 2, 2] as Vector3),
+    );
+    cleared.setSeamColours(undefined);
+    present(cleared, frames);
+    expect(pixelTowards(cleared, [1, 0, 0])).toEqual(pixelTowards(plain, [1, 0, 0]));
   });
 
   it('applies a lock stabilization: a camera turned around shows lens 1 ahead', () => {

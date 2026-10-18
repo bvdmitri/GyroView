@@ -111,9 +111,9 @@ export function bandShownBy(band: SeamBand, images: readonly GreyImage[]): SeamB
 export async function matchedGains(renderer: LabRenderer): Promise<Vector3[]> {
   const meter = renderer.createSeamMeter();
   try {
-    const means = await meter.measure();
-    if (!means) throw new Error('the seam was not measured');
-    return gainsMatching(means, DEFAULT_MAX_GAIN, LENS_0);
+    const reading = await meter.measure();
+    if (!reading) throw new Error('the seam was not measured');
+    return gainsMatching(reading.means, DEFAULT_MAX_GAIN, LENS_0);
   } finally {
     meter.dispose();
   }

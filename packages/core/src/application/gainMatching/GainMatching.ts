@@ -1,4 +1,5 @@
 import { GainMatcher } from '../../domain/colour/gainMatch';
+import { SeamColourMatcher } from '../../domain/colour/seamColour';
 import type { SeamMeter } from '../../ports/SeamMeter';
 import type { Vector3 } from '../../shared/math/Vector3';
 import { reportLater } from '../../shared/errors/reportLater';
@@ -20,19 +21,27 @@ export interface GainMatchingParts {
    */
   readonly referenceLens: number;
   readonly applyGains: (gains: readonly Vector3[]) => void;
+  /**
+   * Takes the colour left between the lenses around the seam at the gains just applied (ADR
+   * 0048); the field is not followed without it.
+   */
+  readonly applySeamColours?: (field: readonly Vector3[]) => void;
   readonly reportFailure?: (error: unknown) => void;
 }
 
 /**
  * Keeps the lens gains matched over time: measures the seam after a presented frame every so
- * often, feeds the matcher and applies what it says. One measurement in flight at a time; one
+ * often, feeds the matcher and applies what it says, and the colour left between the lenses
+ * around the seam at those gains. One measurement in flight at a time; one
  * that lands after `stop` changes nothing. A meter that fails stops the matching, the gains left
  * as they are, and the failure is reported once.
  */
 export class GainMatching {
   private readonly meter: SeamMeter;
   private readonly matcher: GainMatcher;
+  private readonly colourMatcher = new SeamColourMatcher();
   private readonly applyGains: (gains: readonly Vector3[]) => void;
+  private readonly applySeamColours: ((field: readonly Vector3[]) => void) | undefined;
   private readonly reportFailure: (error: unknown) => void;
   private lastMeasuredAt: Seconds | undefined;
   private inFlight: Promise<void> | undefined;
@@ -42,6 +51,7 @@ export class GainMatching {
     this.meter = parts.meter;
     this.matcher = new GainMatcher(parts.referenceLens);
     this.applyGains = parts.applyGains;
+    this.applySeamColours = parts.applySeamColours;
     this.reportFailure = parts.reportFailure ?? reportLater;
   }
 
@@ -78,8 +88,11 @@ export class GainMatching {
   private async measureAt(mediaTime: Seconds): Promise<void> {
     this.lastMeasuredAt = mediaTime;
     try {
-      const means = await this.meter.measure();
-      if (means && !this.isStopped) this.applyGains(this.matcher.update(means, mediaTime));
+      const reading = await this.meter.measure();
+      if (!reading || this.isStopped) return;
+      const gains = this.matcher.update(reading.means, mediaTime);
+      this.applyGains(gains);
+      this.applySeamColours?.(this.colourMatcher.update(reading.around, gains, mediaTime));
     } catch (error) {
       this.isStopped = true;
       throw error;

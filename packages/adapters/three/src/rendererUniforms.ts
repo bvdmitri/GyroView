@@ -18,6 +18,11 @@ import { Matrix3, Vector2, Vector3, Vector4, type IUniform, type Texture } from 
 
 import { toThreeMatrix } from './threeMatrix';
 import {
+  createSeamColourUniforms,
+  SEAM_COLOUR_DEFINES,
+  type SeamColourUniforms,
+} from './seamColourUniforms';
+import {
   CONVERSION_DEFINES,
   conversionUniforms,
   type ConversionUniforms,
@@ -59,6 +64,7 @@ export const SHADER_DEFINES: ShaderDefines = Object.fromEntries([
   ['MEI_TANGENTIAL_ORDERS', MEI_TERM_CAPACITY.tangential],
   ['MEI_THIN_PRISM_ORDERS', MEI_TERM_CAPACITY.thinPrism],
   ...CONVERSION_DEFINES,
+  ...SEAM_COLOUR_DEFINES,
   ['SAMPLING_BILINEAR', SAMPLING_BILINEAR],
   ['SAMPLING_TRILINEAR', SAMPLING_TRILINEAR],
   ['SAMPLING_SUPERSAMPLED', SAMPLING_SUPERSAMPLED],
@@ -69,7 +75,7 @@ export const SHADER_DEFINES: ShaderDefines = Object.fromEntries([
  * all programs as the same objects; with {@link ConversionUniforms}, the only place the
  * TypeScript side spells the shared uniform names (the lab spells the ones only its programs add).
  */
-export interface RendererUniforms extends ConversionUniforms {
+export interface RendererUniforms extends ConversionUniforms, SeamColourUniforms {
   readonly uLensCount: IUniform<number>;
   readonly uViewRotation: IUniform<Matrix3>;
   readonly uStabilization: IUniform<Matrix3>;
@@ -106,6 +112,7 @@ export function createRendererUniforms(
     ...projectionUniforms(lenses),
     ...samplingUniforms(lenses),
     ...conversionUniforms(lenses),
+    ...createSeamColourUniforms(),
     uTexture0: { value: textures[0] ?? null },
     uTexture1: { value: textures[1] ?? null },
   };

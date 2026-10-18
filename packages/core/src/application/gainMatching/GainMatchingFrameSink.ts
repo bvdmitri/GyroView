@@ -6,12 +6,12 @@ import type { Vector3 } from '../../shared/math/Vector3';
 import type { Seconds } from '../../shared/units/time';
 
 /**
- * The renderer that draws what the sink is handed: it measures its seam and takes the gains,
- * which go back to one for each lens it draws when matching stops.
+ * The renderer that draws what the sink is handed: it measures its seam and takes the gains and
+ * the seam's colour field, which go back to one for each lens, and to none, when matching stops.
  */
 export type GainRenderer<Handle> = Pick<
   PictureRenderer<Handle>,
-  'createSeamMeter' | 'setLensGains' | 'lensCount'
+  'createSeamMeter' | 'setLensGains' | 'setSeamColours' | 'lensCount'
 >;
 
 /**
@@ -53,6 +53,9 @@ export class GainMatchingFrameSink<Handle = unknown> implements FrameSink<Handle
       applyGains: (gains): void => {
         renderer.setLensGains(gains);
       },
+      applySeamColours: (field): void => {
+        renderer.setSeamColours(field);
+      },
     });
     this.active = { meter, matching };
   }
@@ -61,6 +64,7 @@ export class GainMatchingFrameSink<Handle = unknown> implements FrameSink<Handle
     this.stop();
     const unitGains = Array.from({ length: this.renderer.lensCount }, () => UNIT_GAIN);
     this.renderer.setLensGains(unitGains);
+    this.renderer.setSeamColours(undefined);
   }
 
   /**

@@ -5,9 +5,29 @@
 uniform mat3 uViewRotation;
 uniform mat3 uStabilization;
 uniform vec3 uLensGain[MAX_LENSES];
+uniform bool uSeamColoured;
+uniform vec3 uSeamRatio[SEAM_COLOUR_DIRECTIONS];
 
 in vec2 vNdc;
 out vec4 outColor;
+
+// The factor drawing lens i towards the halfway colour at the seam (ADR 0048): the colour lens 1
+// shows against lens 0 in the direction around the ring, split between them, its share fading
+// to none away from the ring. Directions are counted about lens 0's axis as the seam meter reads
+// them, each at the middle of its sample.
+vec3 seamColourOf(int i, vec3 dirBody) {
+  if (!uSeamColoured || i > 1) return vec3(1.0);
+  vec3 d = uLensRotation[0] * dirBody;
+  float ring = 0.5 * (uFeather.x + uFeather.y);
+  float fromRing = abs(atan(length(d.xy), d.z) - ring);
+  float share = clamp(1.0 - fromRing / SEAM_COLOUR_FADE_RADIANS, 0.0, 1.0);
+  float position = atan(d.y, d.x) / (2.0 * PI) * float(SEAM_COLOUR_DIRECTIONS) - 0.5;
+  float below = floor(position);
+  int first = int(mod(below, float(SEAM_COLOUR_DIRECTIONS)));
+  int second = int(mod(below + 1.0, float(SEAM_COLOUR_DIRECTIONS)));
+  vec3 ratio = mix(uSeamRatio[first], uSeamRatio[second], position - below);
+  return pow(ratio, vec3((i == 0 ? 0.5 : -0.5) * share));
+}
 
 void main() {
   vec2 point = pointInArea(vNdc, uScreenArea[0]);
@@ -27,7 +47,7 @@ void main() {
     // Weighed by the angle from the lens's axis where it is read, which a seam join may move.
     float weight = 1.0 - smoothstep(feather.x, feather.y, lens.theta);
     // Matched in exposure where exposure is a factor, then brought to the display (ADR 0033).
-    sum += weight * shownOf(i, uLensGain[i] * lens.signal);
+    sum += weight * shownOf(i, uLensGain[i] * seamColourOf(i, dirBody) * lens.signal);
     weightSum += weight;
   }
   bool isShown = isInArea(point) && weightSum > 0.0;

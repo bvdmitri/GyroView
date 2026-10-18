@@ -46,5 +46,11 @@ export interface PictureRenderer<Handle = unknown> extends FrameSink<Handle> {
    * to inspect the other.
    */
   setLensGains(gains: readonly Vector3[]): void;
+  /**
+   * The colour lens 1 shows against lens 0 in each direction around the seam ring after the
+   * lens gains (`seamColourFieldOf`): each lens is drawn towards the halfway colour at the ring,
+   * less and less away from it (ADR 0048). Undefined draws the lenses as the gains leave them.
+   */
+  setSeamColours(field: readonly Vector3[] | undefined): void;
   dispose(): void;
 }

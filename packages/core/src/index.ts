@@ -173,7 +173,13 @@ export {
   type GainRenderer,
 } from './application/gainMatching/GainMatchingFrameSink';
 export { referenceLensOf } from './application/gainMatching/referenceLensOf';
-export type { SeamMeter } from './ports/SeamMeter';
+export type { SeamMeter, SeamReading } from './ports/SeamMeter';
+export {
+  SEAM_COLOUR_DIRECTIONS,
+  SeamColourMatcher,
+  seamColourFieldOf,
+  type SeamDirectionColours,
+} from './domain/colour/seamColour';
 export type { SeamMismatchMeter, SeamMismatchRequest } from './ports/SeamMismatchMeter';
 export {
   isWithinArc,

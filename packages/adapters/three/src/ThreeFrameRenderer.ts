@@ -27,6 +27,7 @@ import {
   type ThreeFrameRendererOptions,
 } from './rendererParts';
 import { SAMPLING_STRATEGIES } from './samplingStrategies';
+import { applySeamColours } from './seamColourUniforms';
 import { scissorBoxOf } from './scissorBox';
 import { SeamMeterPass } from './seamMeter/SeamMeterPass';
 import {
@@ -112,6 +113,16 @@ export class ThreeFrameRenderer implements PictureRenderer<VideoFrame> {
       if (this.hasFrames) texture.needsUpdate = true;
     }
     applyShaderSampling(this.parts.uniforms, strategy);
+    this.redraw();
+  }
+
+  /**
+   * Draws each lens towards the halfway colour at the seam by the seam's colour field, or as the
+   * gains leave it. Redraws the frames on screen.
+   */
+  public setSeamColours(field: readonly CoreVector3[] | undefined): void {
+    this.ensureLive();
+    applySeamColours(this.parts.uniforms, field);
     this.redraw();
   }
 

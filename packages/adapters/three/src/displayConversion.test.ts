@@ -150,7 +150,8 @@ describe('the display conversion', () => {
     cleanups.push(() => {
       meter.dispose();
     });
-    const means = await meter.measure();
+    const reading = await meter.measure();
+    const means = reading?.means;
     const reference = exposureSignalOf(HLG_TO_SDR_BT709, unitTexel([230, 128, 40]));
     expect(means).toHaveLength(2);
     const measured = means ?? [];

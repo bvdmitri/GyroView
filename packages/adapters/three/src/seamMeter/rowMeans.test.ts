@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { rowMeansOf } from './rowMeans';
+import { rowMeansOf, seamReadingOf } from './rowMeans';
 
 const OPAQUE = 255;
 const NOT_IMAGED = 0;
@@ -73,5 +73,49 @@ describe('rowMeansOf', () => {
     expect(rowMeansOf(imagedByOneRow, 1, 2)).toBeUndefined();
     const blownInOneRow = Uint8Array.from([255, 255, 255, OPAQUE, 128, 128, 128, OPAQUE]);
     expect(rowMeansOf(blownInOneRow, 1, 2)).toBeUndefined();
+  });
+});
+
+describe('seamReadingOf', () => {
+  it("reads both lenses' colour in each direction they can be compared in, beside the means", () => {
+    const pixels = Uint8Array.from([
+      // lens 0: two imaged texels, the second blown out
+      102,
+      51,
+      51,
+      OPAQUE,
+      255,
+      255,
+      255,
+      OPAQUE,
+      // lens 1
+      51,
+      102,
+      51,
+      OPAQUE,
+      10,
+      10,
+      10,
+      OPAQUE,
+    ]);
+    const reading = seamReadingOf(pixels, 2, 2);
+    expect(reading?.means[0]?.[0]).toBeCloseTo(102 / 255, 6);
+    expect(reading?.around).toEqual([
+      [
+        [102 / 255, 51 / 255, 51 / 255],
+        [51 / 255, 102 / 255, 51 / 255],
+      ],
+      undefined,
+    ]);
+  });
+
+  it('compares no direction for a camera of another lens count', () => {
+    const pixels = Uint8Array.from([102, 51, 51, OPAQUE]);
+    expect(seamReadingOf(pixels, 1, 1)?.around).toEqual([undefined]);
+  });
+
+  it('reads nothing when no direction can be compared', () => {
+    const pixels = Uint8Array.from([102, 51, 51, NOT_IMAGED, 51, 102, 51, OPAQUE]);
+    expect(seamReadingOf(pixels, 1, 2)).toBeUndefined();
   });
 });

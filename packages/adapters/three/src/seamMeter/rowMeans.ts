@@ -1,4 +1,4 @@
-import type { Vector3 } from '@gyroview/core';
+import type { SeamDirectionColours, SeamReading, Vector3 } from '@gyroview/core';
 
 /**
  * Channels per pixel in the RGBA8 images read back from the GPU.
@@ -49,4 +49,29 @@ function meanOf(row: Uint8Array, columns: readonly number[]): Vector3 {
   }
   const scale = columns.length * CHANNEL_MAX;
   return [sum[0] / scale, sum[1] / scale, sum[2] / scale];
+}
+
+/**
+ * What one read-back of the seam says: the rows' means as {@link rowMeansOf} takes them, and for
+ * two lenses each direction's two colours where both image it unclipped. Undefined when no
+ * direction can be compared.
+ */
+export function seamReadingOf(
+  pixels: Uint8Array,
+  width: number,
+  rowCount: number,
+): SeamReading | undefined {
+  const means = rowMeansOf(pixels, width, rowCount);
+  if (!means) return undefined;
+  const rows = Array.from({ length: rowCount }, (_, row) =>
+    pixels.subarray(row * width * RGBA_CHANNELS, (row + 1) * width * RGBA_CHANNELS),
+  );
+  const [zero, one] = rowCount === 2 ? rows : [];
+  const around = Array.from({ length: width }, (_, column): SeamDirectionColours => {
+    const offset = column * RGBA_CHANNELS;
+    return zero && one && isComparable(zero, offset) && isComparable(one, offset)
+      ? [meanOf(zero, [offset]), meanOf(one, [offset])]
+      : undefined;
+  });
+  return { means, around };
 }
