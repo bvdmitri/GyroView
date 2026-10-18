@@ -24,6 +24,9 @@ Fixed:
   the clip begins.
 - The two files of a split-lens clip trimmed in the Insta360 app (`VID_..._00_002-trim.insv`) are
   found as a pair: the name's suffix after the sequence number is kept for the other lens's file.
+- An Insta360 ONE R recording is stabilized in its own IMU frame. Its info record names it
+  "Insta360 OneR", which no entry matched, so it was stabilized under the aligned guess and lock
+  turned its picture more than leaving it alone; `ONE_R_IMU_FRAME` is measured (ADR 0009).
 
 ## 0.8.1 (2026-10-08)
 
