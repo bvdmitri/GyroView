@@ -19,7 +19,7 @@ import {
 import { equirectangularDirectionOf, equirectangularPixelOf } from '@gyroview/core/testing';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { LabRenderer } from './LabRenderer';
+import { BentJoinRenderer } from './BentJoinRenderer';
 import { directionAt, nearScenePair, ringScene, type DisparityProfile } from './test/nearScene';
 import { readPixels } from '../test/readPixels';
 import { MULTI_TRACK, setupAsRecorded, syntheticCalibration } from '../test/syntheticStitching';
@@ -134,13 +134,13 @@ function largestDifference(a: Uint8ClampedArray, b: Uint8ClampedArray): number {
 }
 
 interface OnScreen {
-  readonly renderer: LabRenderer;
+  readonly renderer: BentJoinRenderer;
   readonly canvas: HTMLCanvasElement;
 }
 
 describe('the seam join', () => {
   const canvases: HTMLCanvasElement[] = [];
-  const renderers: LabRenderer[] = [];
+  const renderers: BentJoinRenderer[] = [];
   const frames: DecodedFrame<VideoFrame>[] = [];
 
   afterEach(() => {
@@ -160,7 +160,7 @@ describe('the seam join', () => {
     canvas.height = SIZE.height;
     document.body.append(canvas);
     canvases.push(canvas);
-    const renderer = LabRenderer.create(canvas, setup, { preserveDrawingBuffer: true });
+    const renderer = BentJoinRenderer.create(canvas, setup, { preserveDrawingBuffer: true });
     renderers.push(renderer);
     renderer.setViewMode('equirectangular');
     const pair = nearScenePair({ calibration, setup, disparity });

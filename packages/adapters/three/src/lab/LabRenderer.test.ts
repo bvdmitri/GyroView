@@ -11,7 +11,7 @@ import { equirectangularPixelOf } from '@gyroview/core/testing';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { LabRenderer } from './LabRenderer';
-import { nearScenePair } from './test/nearScene';
+import { nearScenePair } from '../bentJoin/test/nearScene';
 import { readPixels } from '../test/readPixels';
 import { solidFrame } from '../test/syntheticFrames';
 import { MULTI_TRACK, setupAsRecorded, syntheticCalibration } from '../test/syntheticStitching';

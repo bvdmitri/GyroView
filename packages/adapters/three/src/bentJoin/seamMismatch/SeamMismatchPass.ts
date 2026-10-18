@@ -28,7 +28,7 @@ import { createFullscreenTriangle, createPassMaterial } from '../../fullscreenPa
 import { renderInto } from '../../renderInto';
 import { MAX_LENSES, type RendererUniforms } from '../../rendererUniforms';
 import { RGBA_CHANNELS } from '../../seamMeter/rowMeans';
-import { LAB_DEFINES, SEAM_MISMATCH } from '../labPrograms';
+import { BENT_JOIN_DEFINES, SEAM_MISMATCH } from '../bentJoinPrograms';
 
 /**
  * The most slides one measurement takes, one row of the target each: the disparity range's 65
@@ -95,7 +95,7 @@ export class SeamMismatchPass implements SeamMismatchMeter {
     this.uniforms = createSeamMismatchUniforms(base, this.slides);
     this.material = createPassMaterial(this.uniforms, {
       chunks: SEAM_MISMATCH,
-      defines: LAB_DEFINES,
+      defines: BENT_JOIN_DEFINES,
     });
     this.scene.add(new Mesh(this.geometry, this.material));
     try {

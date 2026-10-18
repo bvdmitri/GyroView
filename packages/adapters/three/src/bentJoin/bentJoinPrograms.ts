@@ -27,9 +27,10 @@ const SEAM_STRIP_DEFINES: readonly (readonly [string, number])[] = [
 ];
 
 /**
- * Every constant the lab's programs refer to: the player's, and the seam join's and seam strip's.
+ * Every constant the bent join's programs refer to: the player's, and the seam join's and seam
+ * strip's.
  */
-export const LAB_DEFINES: ShaderDefines = {
+export const BENT_JOIN_DEFINES: ShaderDefines = {
   ...SHADER_DEFINES,
   ...Object.fromEntries([
     ...SEAM_JOIN_DEFINES,
@@ -39,12 +40,12 @@ export const LAB_DEFINES: ShaderDefines = {
 };
 
 /**
- * The pictures the lab draws: the stitch through the bent seam join, whose fixed join draws what
- * the player draws.
+ * The pictures a bent join draws: the stitch through the bent seam join, whose fixed join draws
+ * what the player draws.
  */
-export const LAB_SHADERS: PictureShaders = {
+export const BENT_JOIN_SHADERS: PictureShaders = {
   programs: pictureProgramsWith(bentJoin),
-  defines: LAB_DEFINES,
+  defines: BENT_JOIN_DEFINES,
 };
 
 /**
@@ -53,6 +54,9 @@ export const LAB_SHADERS: PictureShaders = {
 export const SEAM_MISMATCH = lensProjectionProgram(seamMismatchFragment);
 
 /**
- * Every chunk of the lab's programs once, for checking them against the TypeScript side.
+ * Every chunk of the bent join's programs once, for checking them against the TypeScript side.
  */
-export const LAB_CHUNKS = chunksOf([...Object.values(LAB_SHADERS.programs), SEAM_MISMATCH]);
+export const BENT_JOIN_CHUNKS = chunksOf([
+  ...Object.values(BENT_JOIN_SHADERS.programs),
+  SEAM_MISMATCH,
+]);

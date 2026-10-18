@@ -12,7 +12,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { MAX_SLIDES } from './SeamMismatchPass';
 import { nearScenePair, type NearScene } from '../test/nearScene';
 import { MULTI_TRACK, setupAsRecorded, syntheticCalibration } from '../../test/syntheticStitching';
-import { LabRenderer } from '../LabRenderer';
+import { BentJoinRenderer } from '../BentJoinRenderer';
 
 const CANVAS = { width: 64, height: 32 };
 const UNIT_GAIN: Vector3 = [1, 1, 1];
@@ -47,7 +47,7 @@ function meanOf(bins: SeamBinCosts | undefined): number {
 
 describe('SeamMismatchPass', () => {
   const canvases: HTMLCanvasElement[] = [];
-  const renderers: LabRenderer[] = [];
+  const renderers: BentJoinRenderer[] = [];
   const frames: DecodedFrame<VideoFrame>[] = [];
 
   /**
@@ -61,7 +61,7 @@ describe('SeamMismatchPass', () => {
     canvas.height = CANVAS.height;
     document.body.append(canvas);
     canvases.push(canvas);
-    const renderer = LabRenderer.create(canvas, setup);
+    const renderer = BentJoinRenderer.create(canvas, setup);
     renderers.push(renderer);
     const pair = nearScenePair({ calibration, setup, ...painting });
     frames.push(...pair);

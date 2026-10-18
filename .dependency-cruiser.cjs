@@ -125,10 +125,18 @@ module.exports = {
           '\\.contract\\.ts$',
           '/src/test/',
           '/src/lab/test/',
+          '/src/bentJoin/test/',
           '^packages/core/src/testing/',
         ],
       },
-      to: { path: ['^packages/core/src/testing/', '/src/test/', '/src/lab/test/'] },
+      to: {
+        path: [
+          '^packages/core/src/testing/',
+          '/src/test/',
+          '/src/lab/test/',
+          '/src/bentJoin/test/',
+        ],
+      },
     },
     {
       name: 'ports-do-not-know-use-cases',
@@ -174,7 +182,7 @@ module.exports = {
     {
       name: 'the-lab-stays-out-of-the-player',
       comment:
-        "The Three adapter's lab (the renderer pnpm measure draws with, its seam instruments and the bent join) is for tools/integration; the player, the apps and the adapter's own shipped code never link it (ADR 0026).",
+        "The Three adapter's lab (the renderer pnpm measure draws with and the instruments only the measurements turn) is for tools/integration; the player, the apps and the adapter's own shipped code never link it (ADR 0026, ADR 0048).",
       severity: 'error',
       from: {
         path: '^(packages|apps)/',
