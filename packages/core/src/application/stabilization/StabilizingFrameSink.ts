@@ -3,8 +3,8 @@ import {
   rowCorrectionsAt,
   type RollingShutter,
 } from '../../domain/motion/rollingShutter/RollingShutter';
-import type { Stabilizer } from '../../domain/motion/stabilization/Stabilizer';
-import { OffStabilization } from '../../domain/motion/stabilization/stabilizers';
+import type { StabilizationMode, Stabilizer } from '../../domain/motion/stabilization/Stabilizer';
+import { OffStabilization, stabilizerFor } from '../../domain/motion/stabilization/stabilizers';
 import type { FrameTimes } from '../../domain/motion/timing/FrameTimes';
 import type { FrameSink, Presentation } from '../../ports/FrameSink';
 import type { PictureRenderer } from '../../ports/PictureRenderer';
@@ -47,6 +47,14 @@ export class StabilizingFrameSink<Handle = unknown> implements FrameSink<Handle>
 
   public setStabilizer(stabilizer: Stabilizer): void {
     this.stabilizer = stabilizer;
+  }
+
+  /**
+   * Stabilizes in `mode`, its strategy built over the recording's orientations, which the smooth
+   * mode looks ahead in.
+   */
+  public setStabilizationMode(mode: StabilizationMode): void {
+    this.stabilizer = stabilizerFor(mode, this.parts.motion.orientations);
   }
 
   public present(presentation: Presentation<Handle>): void {
