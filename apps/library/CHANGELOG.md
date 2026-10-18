@@ -16,6 +16,13 @@ Added (ADR 0045, a recording is rendered frame by frame at the pace its consumer
   a multiple of four, or a span that holds no frame, is refused with `invalid-argument`. Its types,
   `Rendition` and `RenditionOptions`, are exported.
 
+Added (ADR 0046, each row is turned for the time its sensor read it):
+
+- An Insta360 ONE R recording has each row of its lenses turned by the camera's turn between the
+  frame's time and the time its sensor read that row, in every stabilization mode: a fast turn no
+  longer skews the top and bottom of the picture against its middle. Other cameras turn whole
+  until their sensors' row order is measured.
+
 Fixed:
 
 - A clip trimmed in the Insta360 app is stabilized with the gyro of its own frames. The app keeps
