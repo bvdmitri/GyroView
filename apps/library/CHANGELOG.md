@@ -23,6 +23,13 @@ Added (ADR 0046, each row is turned for the time its sensor read it):
   longer skews the top and bottom of the picture against its middle. Other cameras turn whole
   until their sensors' row order is measured.
 
+Added (ADR 0047, the smooth mode keeps the horizon level and looks ahead for its heading):
+
+- A fifth stabilization mode, `smooth` (`stabilization="smooth"`, `setStabilization('smooth')`,
+  the Stabilization menu): the horizon level as in `horizon`, the view facing the camera's heading
+  smoothed over a second either way in the recording, so turns are followed without lag and the
+  heading's shake is gone. `STABILIZATION_MODES` lists it between `horizon` and `follow`.
+
 Fixed:
 
 - A clip trimmed in the Insta360 app is stabilized with the gyro of its own frames. The app keeps

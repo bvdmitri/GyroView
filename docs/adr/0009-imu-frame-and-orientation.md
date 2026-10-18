@@ -188,3 +188,8 @@ by lens 0's calibrated pose, gives the same arrangement within 1.7 degrees, its 
 correlating with the picture's at 0.998. `ONE_R_IMU_FRAME` is that arrangement, measured: the X5's
 turned a half turn about the lateral axis. It is not the ONE RS's assumed `-y,x,z`; the two names
 stay separate entries.
+
+## Since ADR 0047 (2026-10-18)
+
+A fifth mode, `smooth`, keeps the horizon level as horizon does and faces the camera's heading
+smoothed both ways in time over the whole track.
